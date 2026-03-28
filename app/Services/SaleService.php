@@ -7,21 +7,27 @@ use App\Models\Customer;
 use App\Models\CustomerLedger;
 use App\Models\CustomerProductPrice;
 use App\Models\CustomerVariantPrice;
+use App\Models\FinancialTransaction;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use Illuminate\Support\Collection;
+use App\Models\StockMovement;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaleService
 {
+    public function __construct(
+        private readonly StockMovementService $stockMovementService,
+        private readonly FinancialTransactionService $financialTransactionService,
+    ) {}
+
     /**
      * Create a sale, update stock + customer last prices, create customer ledger
      * and create double-entry-like accounting transactions.
      *
-     * @param  int  $customerId
      * @param  array<int, array{product_id:int,variant_id:int|null,quantity:int,price:float|string}>  $items
      */
     public function createSale(int $customerId, array $items): Sale
@@ -156,6 +162,16 @@ class SaleService
                     Product::where('id', $row['product_id'])->decrement('stock_quantity', $row['quantity']);
                 }
 
+                $this->stockMovementService->record(
+                    StockMovement::TYPE_SALE,
+                    -$row['quantity'],
+                    'sale',
+                    $sale->id,
+                    $row['variant_id'] ? null : $row['product_id'],
+                    $row['variant_id'],
+                    Auth::id(),
+                );
+
                 // Store last price for this customer.
                 if ($row['variant_id']) {
                     CustomerVariantPrice::updateOrCreate(
@@ -239,6 +255,17 @@ class SaleService
                 ],
             ]);
 
+            $this->financialTransactionService->record(
+                FinancialTransaction::TYPE_SALE,
+                (float) $totalAmount,
+                FinancialTransaction::ACCOUNT_TYPE_CREDIT,
+                'sale',
+                (int) $sale->id,
+                $customerId,
+                null,
+                Auth::id(),
+            );
+
             return $sale;
         });
 
@@ -263,4 +290,3 @@ class SaleService
         ]);
     }
 }
-

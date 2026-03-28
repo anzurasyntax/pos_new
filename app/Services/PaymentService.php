@@ -3,16 +3,24 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\AccountTransaction;
 use App\Models\Customer;
 use App\Models\CustomerLedger;
+use App\Models\FinancialTransaction;
 use App\Models\Payment;
 use App\Models\Purchase;
 use App\Models\Sale;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
+    public function __construct(
+        private readonly FinancialTransactionService $financialTransactionService,
+        private readonly AccountTransactionService $accountTransactionService,
+    ) {}
+
     /**
      * Record a payment against a sale (customer payment).
      *
@@ -81,6 +89,29 @@ class PaymentService
                     'updated_at' => now(),
                 ],
             ]);
+
+            $ftAccountType = $cashAccount->type === 'bank'
+                ? FinancialTransaction::ACCOUNT_TYPE_BANK
+                : FinancialTransaction::ACCOUNT_TYPE_CASH;
+
+            $this->financialTransactionService->record(
+                FinancialTransaction::TYPE_PAYMENT_IN,
+                $amount,
+                $ftAccountType,
+                'payment',
+                (int) $payment->id,
+                (int) $sale->customer_id,
+                null,
+                Auth::id(),
+            );
+
+            $this->accountTransactionService->record(
+                $cashBankAccountId,
+                AccountTransaction::TYPE_IN,
+                $amount,
+                'payment',
+                (int) $payment->id,
+            );
 
             // Update customer ledger: credit for payment (reduces balance).
             $prevBalance = (float) CustomerLedger::query()
@@ -179,6 +210,29 @@ class PaymentService
                 ],
             ]);
 
+            $ftAccountType = $cashAccount->type === 'bank'
+                ? FinancialTransaction::ACCOUNT_TYPE_BANK
+                : FinancialTransaction::ACCOUNT_TYPE_CASH;
+
+            $this->financialTransactionService->record(
+                FinancialTransaction::TYPE_PAYMENT_OUT,
+                $amount,
+                $ftAccountType,
+                'payment',
+                (int) $payment->id,
+                null,
+                (int) $purchase->supplier_id,
+                Auth::id(),
+            );
+
+            $this->accountTransactionService->record(
+                $cashBankAccountId,
+                AccountTransaction::TYPE_OUT,
+                $amount,
+                'payment',
+                (int) $payment->id,
+            );
+
             $purchase->update([
                 'payment_status' => $status,
                 'paid_amount' => $newPaid,
@@ -209,4 +263,3 @@ class PaymentService
         ]);
     }
 }
-

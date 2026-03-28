@@ -10,7 +10,15 @@ class Account extends Model
     protected $fillable = [
         'name',
         'type',
+        'balance',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'balance' => 'decimal:2',
+        ];
+    }
 
     public function transactions(): HasMany
     {
@@ -26,5 +34,9 @@ class Account extends Model
     {
         return $this->hasMany(Expense::class);
     }
-}
 
+    public function accountTransactions(): HasMany
+    {
+        return $this->hasMany(AccountTransaction::class);
+    }
+}

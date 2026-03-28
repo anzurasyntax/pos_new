@@ -6,9 +6,11 @@ use App\Models\CustomerLedger;
 use App\Models\Expense;
 use App\Models\Purchase;
 use App\Models\Sale;
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Request;
 
 class ReportService
 {
@@ -239,6 +241,210 @@ class ReportService
         ];
     }
 
+    /**
+     * Single-day sales totals (count + amount).
+     *
+     * @return array{date: string, sale_count: int, total_amount: float}
+     */
+    public function dailySalesReport(string $date): array
+    {
+        $start = Carbon::parse($date)->startOfDay();
+        $end = Carbon::parse($date)->copy()->endOfDay();
+
+        $row = DB::table('sales')
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('COUNT(*) as sale_count, COALESCE(SUM(total_amount), 0) as total_amount')
+            ->first();
+
+        return [
+            'date' => $date,
+            'sale_count' => (int) ($row->sale_count ?? 0),
+            'total_amount' => (float) ($row->total_amount ?? 0),
+        ];
+    }
+
+    /**
+     * Calendar month sales totals.
+     *
+     * @return array{year: int, month: int, sale_count: int, total_amount: float}
+     */
+    public function monthlySalesReport(int $year, int $month): array
+    {
+        $start = Carbon::create($year, $month, 1)->startOfMonth();
+        $end = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $row = DB::table('sales')
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('COUNT(*) as sale_count, COALESCE(SUM(total_amount), 0) as total_amount')
+            ->first();
+
+        return [
+            'year' => $year,
+            'month' => $month,
+            'sale_count' => (int) ($row->sale_count ?? 0),
+            'total_amount' => (float) ($row->total_amount ?? 0),
+        ];
+    }
+
+    /**
+     * Gross profit from sales using line COGS (variant or product purchase_price).
+     *
+     * @return array{revenue: float, cost_of_goods_sold: float, gross_profit: float}
+     */
+    public function profitEstimation(array $filters): array
+    {
+        $query = DB::table('sales')
+            ->join('sale_items', 'sales.id', '=', 'sale_items.sale_id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('product_variants', 'sale_items.variant_id', '=', 'product_variants.id');
+
+        if (! empty($filters['date_from'])) {
+            $query->where('sales.created_at', '>=', $filters['date_from']);
+        }
+        if (! empty($filters['date_to'])) {
+            $query->where('sales.created_at', '<=', $filters['date_to']);
+        }
+
+        $row = $query->selectRaw(
+            'COALESCE(SUM(sale_items.quantity * sale_items.price), 0) as revenue, '.
+            'COALESCE(SUM(sale_items.quantity * COALESCE(product_variants.purchase_price, products.purchase_price)), 0) as cogs'
+        )->first();
+
+        $revenue = (float) ($row->revenue ?? 0);
+        $cogs = (float) ($row->cogs ?? 0);
+
+        return [
+            'revenue' => $revenue,
+            'cost_of_goods_sold' => $cogs,
+            'gross_profit' => round($revenue - $cogs, 2),
+        ];
+    }
+
+    public function profitEstimationForDateRange(DateTimeInterface $from, DateTimeInterface $to): float
+    {
+        $result = $this->profitEstimation([
+            'date_from' => $from,
+            'date_to' => $to,
+        ]);
+
+        return $result['gross_profit'];
+    }
+
+    /**
+     * Inventory valuation: variant stock at variant purchase_price + simple products at product purchase_price.
+     *
+     * @return array{total_valuation: float, variants_valuation: float, simple_products_valuation: float}
+     */
+    public function stockValuationReport(): array
+    {
+        $variantsValuation = (float) (DB::table('product_variants')
+            ->selectRaw('COALESCE(SUM(stock_quantity * purchase_price), 0) as v')
+            ->value('v') ?? 0);
+
+        $simpleValuation = (float) (DB::table('products as p')
+            ->whereNotExists(function ($q): void {
+                $q->select(DB::raw('1'))
+                    ->from('product_variants as pv')
+                    ->whereColumn('pv.product_id', 'p.id');
+            })
+            ->selectRaw('COALESCE(SUM(p.stock_quantity * p.purchase_price), 0) as v')
+            ->value('v') ?? 0);
+
+        return [
+            'total_valuation' => round($variantsValuation + $simpleValuation, 2),
+            'variants_valuation' => round($variantsValuation, 2),
+            'simple_products_valuation' => round($simpleValuation, 2),
+        ];
+    }
+
+    /**
+     * Top sellers by quantity (variant granularity when applicable).
+     *
+     * @return Collection<int, object>
+     */
+    public function topSellingProducts(int $limit = 10, array $filters = []): Collection
+    {
+        $query = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('product_variants', 'sale_items.variant_id', '=', 'product_variants.id')
+            ->selectRaw(
+                'products.id as product_id, products.name as product_name, '.
+                'product_variants.variant_name as variant_name, '.
+                'SUM(sale_items.quantity) as total_qty, '.
+                'SUM(sale_items.quantity * sale_items.price) as total_revenue'
+            )
+            ->groupBy('products.id', 'products.name', 'product_variants.variant_name')
+            ->orderByDesc('total_qty')
+            ->limit($limit);
+
+        if (! empty($filters['date_from'])) {
+            $query->where('sales.created_at', '>=', $filters['date_from']);
+        }
+        if (! empty($filters['date_to'])) {
+            $query->where('sales.created_at', '<=', $filters['date_to']);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Variant rows below threshold; includes simple (non-variant) products as one row each.
+     *
+     * @return Collection<int, object>
+     */
+    public function lowStockReportVariantBased(int $defaultThreshold = 5): Collection
+    {
+        $variants = DB::table('product_variants as pv')
+            ->join('products as p', 'pv.product_id', '=', 'p.id')
+            ->whereRaw('pv.stock_quantity <= COALESCE(pv.low_stock_threshold, ?)', [$defaultThreshold])
+            ->selectRaw(
+                'p.name as product_name, pv.variant_name, pv.sku as variant_sku, p.sku as product_sku, '.
+                'pv.stock_quantity, COALESCE(pv.low_stock_threshold, ?) as threshold',
+                [$defaultThreshold]
+            )
+            ->orderBy('pv.stock_quantity')
+            ->get();
+
+        $simple = DB::table('products as p')
+            ->whereNotExists(function ($q): void {
+                $q->select(DB::raw('1'))
+                    ->from('product_variants as pv')
+                    ->whereColumn('pv.product_id', 'p.id');
+            })
+            ->where('p.stock_quantity', '<=', $defaultThreshold)
+            ->selectRaw(
+                'p.name as product_name, NULL as variant_name, NULL as variant_sku, p.sku as product_sku, '.
+                'p.stock_quantity, ? as threshold',
+                [$defaultThreshold]
+            )
+            ->orderBy('p.stock_quantity')
+            ->get();
+
+        return $variants->concat($simple);
+    }
+
+    /**
+     * Count of variant SKUs + simple products at or below low-stock threshold.
+     */
+    public function lowStockItemsCount(int $defaultThreshold = 5): int
+    {
+        $variantCount = DB::table('product_variants')
+            ->whereRaw('stock_quantity <= COALESCE(low_stock_threshold, ?)', [$defaultThreshold])
+            ->count();
+
+        $simpleCount = DB::table('products as p')
+            ->whereNotExists(function ($q): void {
+                $q->select(DB::raw('1'))
+                    ->from('product_variants as pv')
+                    ->whereColumn('pv.product_id', 'p.id');
+            })
+            ->where('p.stock_quantity', '<=', $defaultThreshold)
+            ->count();
+
+        return (int) $variantCount + (int) $simpleCount;
+    }
+
     private function applySalesDateFilters($query, array $filters)
     {
         if (! empty($filters['date_from'])) {
@@ -293,4 +499,3 @@ class ReportService
         }
     }
 }
-

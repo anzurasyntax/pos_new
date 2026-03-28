@@ -3,12 +3,20 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\AccountTransaction;
 use App\Models\Expense;
+use App\Models\FinancialTransaction;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ExpenseService
 {
+    public function __construct(
+        private readonly FinancialTransactionService $financialTransactionService,
+        private readonly AccountTransactionService $accountTransactionService,
+    ) {}
+
     public function addExpense(
         string $title,
         float $amount,
@@ -75,8 +83,30 @@ class ExpenseService
                 ],
             ]);
 
+            $ftAccountType = $cashAccount->type === 'bank'
+                ? FinancialTransaction::ACCOUNT_TYPE_BANK
+                : FinancialTransaction::ACCOUNT_TYPE_CASH;
+
+            $this->financialTransactionService->record(
+                FinancialTransaction::TYPE_EXPENSE,
+                $amount,
+                $ftAccountType,
+                'expense',
+                (int) $expense->id,
+                null,
+                null,
+                Auth::id(),
+            );
+
+            $this->accountTransactionService->record(
+                $cashBankAccountId,
+                AccountTransaction::TYPE_OUT,
+                $amount,
+                'expense',
+                (int) $expense->id,
+            );
+
             return $expense;
         });
     }
 }
-

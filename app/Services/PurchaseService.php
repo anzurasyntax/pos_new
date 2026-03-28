@@ -3,20 +3,27 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\FinancialTransaction;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\StockMovement;
 use App\Models\Supplier;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PurchaseService
 {
+    public function __construct(
+        private readonly StockMovementService $stockMovementService,
+        private readonly FinancialTransactionService $financialTransactionService,
+    ) {}
+
     /**
      * Create a purchase, update stock, and create double-entry-like accounting transactions.
      *
-     * @param  int  $supplierId
      * @param  array<int, array{product_id:int,variant_id:int|null,quantity:int,price:float|string}>  $items
      */
     public function createPurchase(int $supplierId, array $items): Purchase
@@ -143,6 +150,16 @@ class PurchaseService
                 } else {
                     Product::where('id', $row['product_id'])->increment('stock_quantity', $row['quantity']);
                 }
+
+                $this->stockMovementService->record(
+                    StockMovement::TYPE_PURCHASE,
+                    $row['quantity'],
+                    'purchase',
+                    $purchase->id,
+                    $row['variant_id'] ? null : $row['product_id'],
+                    $row['variant_id'],
+                    Auth::id(),
+                );
             }
 
             PurchaseItem::insert($purchaseItems);
@@ -187,6 +204,17 @@ class PurchaseService
                 ],
             ]);
 
+            $this->financialTransactionService->record(
+                FinancialTransaction::TYPE_PURCHASE,
+                (float) $totalAmount,
+                FinancialTransaction::ACCOUNT_TYPE_CREDIT,
+                'purchase',
+                (int) $purchase->id,
+                null,
+                $supplierId,
+                Auth::id(),
+            );
+
             return $purchase;
         });
 
@@ -211,4 +239,3 @@ class PurchaseService
         ]);
     }
 }
-

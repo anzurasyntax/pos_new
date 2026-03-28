@@ -1,15 +1,17 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\SalesController;
+use App\Http\Controllers\Api\DashboardSummaryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SalesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -19,6 +21,11 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard');
+
+Route::middleware('auth')->prefix('api')->group(function () {
+    Route::get('/dashboard/summary', DashboardSummaryController::class)
+        ->name('api.dashboard.summary');
+});
 
 Route::middleware(['auth', 'checkRole:sales'])->group(function () {
     Route::get('/sales', [SalesController::class, 'create'])->name('sales.index');
@@ -62,7 +69,7 @@ Route::middleware(['auth', 'checkRole:purchase'])->group(function () {
 });
 
 Route::middleware(['auth', 'checkRole:inventory.view'])->group(function () {
-    Route::get('/inventory', [\App\Http\Controllers\InventoryController::class, 'index'])
+    Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
 });
 

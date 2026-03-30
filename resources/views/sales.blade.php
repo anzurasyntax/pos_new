@@ -1,22 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            POS - New Sale
-        </h2>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">New sale</h1>
+            <p class="mt-1 text-sm text-slate-500">Select a customer, search by name or SKU, then save when the cart is ready.</p>
+        </div>
     </x-slot>
 
-    <div class="py-6">
+    <div class="py-6 pb-28 md:pb-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             @if (session('success'))
-                <div class="mb-4 rounded-md bg-green-50 border border-green-200 px-4 py-3 text-green-800">
-                    {{ session('success') }}
+                <div class="mb-4 flex gap-3 rounded-xl bg-emerald-50 border border-emerald-200/80 px-4 py-3 text-emerald-900 shadow-sm" role="status">
+                    <span class="shrink-0 text-emerald-600 mt-0.5" aria-hidden="true">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <div class="text-sm font-medium">{{ session('success') }}</div>
                 </div>
             @endif
 
             @if ($errors->any())
-                <div class="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-red-800">
-                    <div class="font-medium mb-2">Please fix the following:</div>
-                    <ul class="list-disc ps-5 space-y-1">
+                <div class="mb-4 rounded-xl bg-rose-50 border border-rose-200/80 px-4 py-3 text-rose-900 shadow-sm" role="alert">
+                    <div class="font-semibold mb-2 flex items-center gap-2">
+                        <svg class="h-5 w-5 text-rose-600 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        Please fix the following:
+                    </div>
+                    <ul class="list-disc ps-5 space-y-1 text-sm">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -24,14 +31,14 @@
                 </div>
             @endif
 
-            <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
+            <div class="bg-white rounded-2xl shadow-soft ring-1 ring-slate-200/60 p-4 sm:p-6 lg:p-8">
                 <form method="POST" action="{{ route('sales.store') }}" id="salesForm">
                     @csrf
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div class="lg:col-span-1">
-                            <div class="flex items-end gap-3">
-                                <div class="flex-1">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                        <div class="lg:col-span-1 rounded-xl bg-slate-50/80 ring-1 ring-slate-200/60 p-4 sm:p-5">
+                            <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                                <div class="flex-1 min-w-0">
                                     <x-select
                                         label="Customer"
                                         name="customer_id"
@@ -46,33 +53,37 @@
                                     </x-select>
                                 </div>
 
-                                <div class="pb-0.5">
+                                <div class="sm:pb-0.5 shrink-0">
                                     <x-button
                                         type="secondary"
                                         htmlType="button"
-                                        text="Add New Customer"
+                                        text="New customer"
                                         id="openCustomerModalBtn"
-                                        class="px-4 py-2 whitespace-nowrap"
+                                        class="w-full sm:w-auto px-4 py-2.5 whitespace-nowrap"
                                     />
                                 </div>
                             </div>
 
-                            <div class="mt-3 text-sm text-gray-600">
-                                Choose customer, then scan/type products and press Enter.
-                            </div>
+                            <p class="mt-4 text-sm text-slate-600 leading-relaxed">
+                                <span class="font-medium text-slate-700">Tip:</span> pick the customer first, then type a product name or SKU and press <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-xs font-mono text-slate-600">Enter</kbd> to add lines quickly.
+                            </p>
                         </div>
 
                         <div class="lg:col-span-2">
-                            <label for="productSearch" class="block text-sm font-medium text-gray-700">
-                                Search Product (name or SKU)
+                            <label for="productSearch" class="block text-sm font-semibold text-slate-700">
+                                Find product
                             </label>
+                            <p class="text-xs text-slate-500 mt-0.5 mb-2">Search by product name or SKU</p>
 
                             <div class="relative">
+                                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </span>
                                 <x-input
                                     name="productSearch"
                                     type="text"
-                                    placeholder="Type and press Enter..."
-                                    class="mt-2 pr-28"
+                                    placeholder="Start typing…"
+                                    class="mt-0 pl-10 pr-14 py-3 text-base border-slate-200"
                                     autocomplete="off"
                                     spellcheck="false"
                                     autofocus
@@ -83,44 +94,45 @@
                                     htmlType="button"
                                     text=""
                                     id="addProductBtn"
-                                    class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-2 rounded-lg"
+                                    aria-label="Add highlighted product"
                                 >
                                     <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
                                     </svg>
                                 </x-button>
 
-                                <div id="suggestions" class="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden hidden z-10">
-                                    <div id="suggestionsInner" class="max-h-60 overflow-auto"></div>
+                                <div id="suggestions" class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-900/10 overflow-hidden hidden z-20 ring-1 ring-slate-200/80">
+                                    <div id="suggestionsInner" class="max-h-64 overflow-auto divide-y divide-slate-100"></div>
                                 </div>
                             </div>
 
-                            <div id="searchHint" class="mt-2 text-sm text-red-600" style="min-height: 18px;"></div>
+                            <div id="searchHint" class="mt-2 text-sm font-medium text-rose-600 min-h-[1.25rem]" aria-live="polite"></div>
                         </div>
                     </div>
 
-                    <div class="mt-6">
-                        <div class="flex items-center justify-between gap-3 mb-3">
-                            <h3 class="text-lg font-semibold text-gray-800">Sale Items</h3>
+                    <div class="mt-8">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <h3 class="text-lg font-bold text-slate-900 tracking-tight">Line items</h3>
                             <x-button
                                 type="secondary"
                                 htmlType="button"
-                                text="Clear"
+                                text="Clear cart"
                                 id="clearBtn"
-                                class="px-4 py-2 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                class="px-4 py-2.5 w-full sm:w-auto"
                             />
                         </div>
 
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                        <div class="overflow-x-auto rounded-xl ring-1 ring-slate-200/80">
+                            <table class="min-w-full divide-y divide-slate-200">
+                                <thead class="bg-slate-50/90">
                                     <tr>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variant</th>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                        <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
+                                        <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Variant</th>
+                                        <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Qty</th>
+                                        <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Price</th>
+                                        <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
+                                        <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><span class="sr-only">Remove</span></th>
                                     </tr>
                                 </thead>
 
@@ -141,10 +153,10 @@
                                             $variant = $hasVariants ? $product->variants->firstWhere('id', $variantId) : null;
                                         @endphp
 
-                                        <tr class="align-top" data-row="{{ $i }}"
+                                        <tr class="align-top hover:bg-slate-50/50 transition-colors" data-row="{{ $i }}"
                                             data-product-id="{{ $productId }}"
                                             data-variant-id="{{ $variantId }}">
-                                            <td class="px-3 py-3">
+                                            <td class="px-4 py-3">
                                                 <div class="font-medium text-gray-800">
                                                     {{ $product?->name ?? 'Unknown' }}
                                                 </div>
@@ -154,10 +166,10 @@
                                                 <input type="hidden" name="items[{{ $i }}][product_id]" value="{{ $productId }}"/>
                                             </td>
 
-                                            <td class="px-3 py-3" style="min-width: 180px;">
+                                            <td class="px-4 py-3" style="min-width: 180px;">
                                                 @if ($hasVariants)
                                                     <select name="items[{{ $i }}][variant_id]"
-                                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 variantSelect"
+                                                        class="block w-full rounded-lg border-slate-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 px-3 py-2 variantSelect"
                                                         data-variant-select>
                                                         @php
                                                             $selectedVariantId = $variantId ?? $product->variants->first()?->id;
@@ -173,7 +185,7 @@
                                                 @endif
                                             </td>
 
-                                            <td class="px-3 py-3" style="min-width: 110px;">
+                                            <td class="px-4 py-3" style="min-width: 110px;">
                                                 <x-input
                                                     name="items[{{ $i }}][quantity]"
                                                     type="number"
@@ -185,7 +197,7 @@
                                                 />
                                             </td>
 
-                                            <td class="px-3 py-3" style="min-width: 160px;">
+                                            <td class="px-4 py-3" style="min-width: 160px;">
                                                 <x-input
                                                     name="items[{{ $i }}][price]"
                                                     type="number"
@@ -197,11 +209,11 @@
                                                 />
                                             </td>
 
-                                            <td class="px-3 py-3">
-                                                <div class="text-gray-900 font-medium tabular-nums lineTotal">0.00</div>
+                                            <td class="px-4 py-3">
+                                                <div class="text-slate-900 font-semibold tabular-nums lineTotal">0.00</div>
                                             </td>
 
-                                            <td class="px-3 py-3">
+                                            <td class="px-4 py-3">
                                                 <x-button
                                                     type="danger"
                                                     htmlType="button"
@@ -214,8 +226,8 @@
 
                                     @if ($rowCount === 0)
                                         <tr>
-                                            <td colspan="6" class="px-3 py-6 text-gray-600">
-                                                No items yet. Add products above.
+                                            <td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">
+                                                Cart is empty. Use the search field above to add products.
                                             </td>
                                         </tr>
                                     @endif
@@ -224,31 +236,57 @@
                         </div>
                     </div>
 
-                    <div class="mt-6">
-                        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                            <div class="text-sm text-gray-600">Grand Total</div>
-                            <div class="text-3xl font-semibold text-gray-900 tabular-nums" id="grandTotal">0.00</div>
+                    <div class="mt-8 md:mt-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-5 sm:p-6 text-white shadow-lg ring-1 ring-slate-700/50">
+                        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
+                            <div>
+                                <div class="text-sm font-medium text-slate-300">Grand total</div>
+                                <div class="text-xs text-slate-400 mt-0.5 hidden sm:block">Including all line items below</div>
+                            </div>
+                            <div class="text-3xl sm:text-4xl font-bold tabular-nums tracking-tight text-white" id="grandTotal">0.00</div>
                         </div>
                         @error('stock')
-                            <p class="mt-3 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-4 text-sm text-rose-300 font-medium">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <div class="mt-5 flex justify-end">
+                    <div class="mt-5 hidden md:flex justify-end">
                         <x-button
                             type="primary"
                             htmlType="submit"
                             text=""
                             loadingText="Saving..."
-                            class="text-base px-8 py-3"
+                            class="text-base px-8 py-3.5 rounded-xl"
+                            id="saveSaleDesktopBtn"
                         >
                             <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 8.707 9.879a1 1 0 00-1.414 1.414l1.414 1.414a1 1 0 001.414 0l3.586-3.586z" clip-rule="evenodd"/>
                             </svg>
-                            <span>Save Sale</span>
+                            <span>Save sale</span>
                         </x-button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Mobile: sticky checkout -->
+            <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-lg px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(15,23,42,0.12)]">
+                <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</div>
+                        <div class="text-xl font-bold tabular-nums text-slate-900" id="grandTotalSticky">0.00</div>
+                    </div>
+                    <button
+                        type="submit"
+                        form="salesForm"
+                        data-loading-text="Saving..."
+                        id="saveSaleMobileBtn"
+                        class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-60 shrink-0"
+                    >
+                        <svg class="w-5 h-5 me-2" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 8.707 9.879a1 1 0 00-1.414 1.414l1.414 1.414a1 1 0 001.414 0l3.586-3.586z" clip-rule="evenodd"/>
+                        </svg>
+                        Save sale
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -261,17 +299,17 @@
         aria-modal="true"
         aria-labelledby="customerModalTitle"
     >
-        <div id="customerModalBackdrop" class="absolute inset-0 bg-gray-900/40"></div>
+        <div id="customerModalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
 
-        <div class="relative max-w-lg mx-auto mt-20">
-            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+        <div class="relative max-w-lg mx-auto mt-12 sm:mt-24 px-4">
+            <div class="bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200/80 p-5 sm:p-6">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h3 id="customerModalTitle" class="text-lg font-semibold text-gray-800">
-                            Add New Customer
+                        <h3 id="customerModalTitle" class="text-lg font-bold text-slate-900 tracking-tight">
+                            New customer
                         </h3>
-                        <p class="mt-1 text-sm text-gray-600">
-                            Fill in the details and save. The customer will be added to the dropdown.
+                        <p class="mt-1 text-sm text-slate-600 leading-relaxed">
+                            They will appear in the customer list immediately after saving.
                         </p>
                     </div>
 
@@ -363,6 +401,7 @@
             const clearBtn = document.getElementById('clearBtn');
             const itemsBody = document.getElementById('itemsBody');
             const grandTotalEl = document.getElementById('grandTotal');
+            const grandTotalStickyEl = document.getElementById('grandTotalSticky');
             const searchHint = document.getElementById('searchHint');
 
             const suggestionsBox = document.getElementById('suggestions');
@@ -433,7 +472,9 @@
                     const lineEl = rowEl.querySelector('.lineTotal');
                     total += toNumber(lineEl?.textContent);
                 });
-                grandTotalEl.textContent = moneyFmt(total);
+                const formatted = moneyFmt(total);
+                grandTotalEl.textContent = formatted;
+                if (grandTotalStickyEl) grandTotalStickyEl.textContent = formatted;
             }
 
             function recalcAll() {
@@ -513,45 +554,45 @@
                 const lineTotal = qty * price;
 
                 const tr = document.createElement('tr');
-                tr.className = 'align-top';
                 tr.setAttribute('data-row', String(idx));
                 tr.setAttribute('data-product-id', String(productId));
                 tr.setAttribute('data-variant-id', String(variantId));
 
                 const variantCell = hasVariants
                     ? `
-                        <select name="items[${idx}][variant_id]" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 variantSelect">
+                        <select name="items[${idx}][variant_id]" class="block w-full rounded-lg border-slate-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 px-3 py-2 variantSelect">
                             ${variantOptionsHtml(productId, variantId)}
                         </select>
                       `
-                    : `<span class="text-sm text-gray-700">-</span>`;
+                    : `<span class="text-sm text-slate-700">-</span>`;
 
+                tr.className = 'align-top hover:bg-slate-50/50 transition-colors';
                 tr.innerHTML = `
-                    <td class="px-3 py-3">
-                        <div class="font-medium text-gray-800">${product.name}</div>
-                        <div class="text-xs text-gray-500">SKU: ${product.sku}</div>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold text-slate-900">${product.name}</div>
+                        <div class="text-xs text-slate-500">SKU: ${product.sku}</div>
                         <input type="hidden" name="items[${idx}][product_id]" value="${productId}"/>
                     </td>
-                    <td class="px-3 py-3" style="min-width: 180px;">
+                    <td class="px-4 py-3" style="min-width: 180px;">
                         ${variantCell}
                     </td>
-                    <td class="px-3 py-3" style="min-width: 110px;">
+                    <td class="px-4 py-3" style="min-width: 110px;">
                         <input type="number" min="1" step="1"
                             name="items[${idx}][quantity]"
                             value="${qty}"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 qtyInput" />
+                            class="block w-full rounded-lg border-slate-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 px-3 py-2 qtyInput" />
                     </td>
-                    <td class="px-3 py-3" style="min-width: 160px;">
+                    <td class="px-4 py-3" style="min-width: 160px;">
                         <input type="number" min="0" step="0.01"
                             name="items[${idx}][price]"
                             value="${price}"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 priceInput" />
+                            class="block w-full rounded-lg border-slate-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 px-3 py-2 priceInput" />
                     </td>
-                    <td class="px-3 py-3">
-                        <div class="text-gray-900 font-medium tabular-nums lineTotal">${moneyFmt(lineTotal)}</div>
+                    <td class="px-4 py-3">
+                        <div class="text-slate-900 font-semibold tabular-nums lineTotal">${moneyFmt(lineTotal)}</div>
                     </td>
-                    <td class="px-3 py-3">
-                        <button type="button" class="removeRowBtn inline-flex items-center justify-center px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+                    <td class="px-4 py-3">
+                        <button type="button" class="removeRowBtn inline-flex items-center justify-center px-3 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
                             Remove
                         </button>
                     </td>
@@ -577,8 +618,8 @@
                 suggestionsBox.classList.remove('hidden');
                 list.forEach((p, i) => {
                     const div = document.createElement('div');
-                    div.className = 'px-3 py-2 cursor-pointer hover:bg-indigo-50';
-                    if (i === activeSuggestionIndex) div.className = 'px-3 py-2 cursor-pointer bg-indigo-50';
+                    div.className = 'px-4 py-3 cursor-pointer text-sm text-slate-800 hover:bg-emerald-50 active:bg-emerald-100/80';
+                    if (i === activeSuggestionIndex) div.className = 'px-4 py-3 cursor-pointer text-sm font-medium bg-emerald-50 text-emerald-900 ring-inset ring-1 ring-emerald-200/80';
                     div.dataset.productId = p.id;
                     div.textContent = `${p.name} (${p.sku})`;
                     div.addEventListener('click', () => addProduct(p.id));
@@ -677,24 +718,24 @@
                 if (!itemsBody.querySelector('tr[data-row]')) {
                     itemsBody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="px-3 py-6 text-gray-600">
-                                No items yet. Add products above.
+                            <td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">
+                                Cart is empty. Use the search field above to add products.
                             </td>
                         </tr>
                     `;
-                    grandTotalEl.textContent = moneyFmt(0);
+                    updateGrandTotal();
                 }
             });
 
             clearBtn.addEventListener('click', function () {
                 itemsBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-3 py-6 text-gray-600">
-                            No items yet. Add products above.
+                        <td colspan="6" class="px-4 py-12 text-center text-sm text-slate-500">
+                            Cart is empty. Use the search field above to add products.
                         </td>
                     </tr>
                 `;
-                grandTotalEl.textContent = moneyFmt(0);
+                updateGrandTotal();
                 searchInput.focus();
             });
 
@@ -716,6 +757,25 @@
 
             // Init totals on load (for old() values).
             recalcAll();
+
+            const salesForm = document.getElementById('salesForm');
+            const saveMobile = document.getElementById('saveSaleMobileBtn');
+            if (salesForm && saveMobile) {
+                salesForm.addEventListener('submit', function () {
+                    const loadingText = saveMobile.getAttribute('data-loading-text');
+                    if (!loadingText || saveMobile.disabled) return;
+                    if (!saveMobile.dataset.originalHtml) {
+                        saveMobile.dataset.originalHtml = saveMobile.innerHTML;
+                    }
+                    saveMobile.disabled = true;
+                    saveMobile.innerHTML = `
+                        <span class="inline-flex items-center gap-2">
+                            <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-white"></span>
+                            ${loadingText}
+                        </span>
+                    `;
+                });
+            }
         })();
     </script>
 

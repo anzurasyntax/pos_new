@@ -22,14 +22,14 @@
     // (e.g. variants.0.name).
     $finalValue = old($errorKey, $value);
     $hasError = $errors->has($errorKey);
-    $baseInputClass = 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2';
+    $baseInputClass = 'block w-full rounded-lg border-slate-200 bg-white shadow-sm px-3 py-2.5 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-shadow';
     $extraClass = $attributes->get('class');
     $mergedInputClass = $baseInputClass . ($extraClass ? (' ' . $extraClass) : '');
 @endphp
 
 <div class="w-full">
     @if (!empty($label))
-        <label for="{{ $id }}" class="block text-sm font-medium text-gray-700">
+        <label for="{{ $id }}" class="block text-sm font-semibold text-slate-700">
             {{ $label }}
         </label>
     @endif
@@ -47,11 +47,11 @@
     </div>
 
     @if ($hasError)
-        <p id="error-{{ $id }}" class="mt-2 text-sm text-red-600">
+        <p id="error-{{ $id }}" class="mt-2 text-sm text-rose-600">
             {{ $errors->first($errorKey) }}
         </p>
     @else
-        <p id="error-{{ $id }}" class="mt-2 text-sm text-red-600 hidden"></p>
+        <p id="error-{{ $id }}" class="mt-2 text-sm text-rose-600 hidden"></p>
     @endif
 </div>
 

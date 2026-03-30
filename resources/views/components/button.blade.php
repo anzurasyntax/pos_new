@@ -7,13 +7,13 @@
 
 @php
     $variant = (string) $type;
-    $baseClass = 'inline-flex items-center justify-center rounded-md font-medium transition-colors';
-    $sizeClass = 'px-5 py-3';
+    $baseClass = 'inline-flex items-center justify-center rounded-lg font-semibold text-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2';
+    $sizeClass = 'px-5 py-2.5';
 
     $classesByVariant = [
-        'primary' => 'bg-indigo-600 text-white hover:bg-indigo-700',
-        'secondary' => 'bg-gray-100 text-gray-800 hover:bg-gray-200 border border-gray-200',
-        'danger' => 'bg-red-600 text-white hover:bg-red-700',
+        'primary' => 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow active:scale-[0.98]',
+        'secondary' => 'bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-sm',
+        'danger' => 'bg-rose-600 text-white hover:bg-rose-700 shadow-sm active:scale-[0.98]',
     ];
 
     $classes = $classesByVariant[$variant] ?? $classesByVariant['primary'];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DashboardSummaryController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
@@ -107,9 +108,21 @@ Route::middleware(['auth', 'checkRole:sales'])->group(function () {
 });
 
 Route::middleware(['auth', 'checkRole:inventory.manage'])->group(function () {
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::patch('/products/{product}/quick-price', [ProductController::class, 'quickUpdateProductPrice'])
+        ->name('products.quick-price');
+    Route::patch('/products/{product}/variants/{variant}/quick-price', [ProductController::class, 'quickUpdateVariantPrice'])
+        ->name('products.variants.quick-price');
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::patch('/products/{product}', [ProductController::class, 'update'])->name('products.update');

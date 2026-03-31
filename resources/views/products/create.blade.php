@@ -34,6 +34,23 @@
                         </div>
 
                         <div>
+                            <label for="category_id" class="block text-sm font-semibold text-slate-700">Category</label>
+                            <p class="text-xs text-slate-500 mt-0.5 mb-2">Optional. Manage categories under <a href="{{ route('categories.index') }}" class="text-emerald-700 font-medium hover:underline">Categories</a>.</p>
+                            <select id="category_id" name="category_id"
+                                class="block w-full rounded-lg border-slate-200 bg-white shadow-sm px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
+                                <option value="">— None —</option>
+                                @foreach ($categoryOptions as $opt)
+                                    <option value="{{ $opt['id'] }}" @selected(old('category_id') == $opt['id'])>
+                                        {{ $opt['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('category_id')
+                                <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
                             <x-input
                                 label="Stock Quantity"
                                 name="stock_quantity"

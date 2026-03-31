@@ -13,6 +13,13 @@
                 </div>
             @endif
 
+            <div class="mb-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 leading-relaxed">
+                <span class="font-semibold text-slate-900">How stock is updated:</span>
+                stock <span class="font-medium text-emerald-800">increases</span> when you save a <a href="{{ route('purchase.index') }}" class="text-emerald-700 font-semibold hover:underline">purchase</a>
+                and <span class="font-medium text-rose-800">decreases</span> when you save a <a href="{{ route('sales.index') }}" class="text-emerald-700 font-semibold hover:underline">sale</a>.
+                Manual changes on the <a href="{{ route('products.index') }}" class="text-emerald-700 font-semibold hover:underline">product</a> form are logged as adjustments.
+            </div>
+
             <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
                 <!-- Search -->
                 <form method="GET" action="{{ route('inventory.index') }}" class="mb-5">

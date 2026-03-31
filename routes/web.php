@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\DashboardSummaryController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EstimateController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvoiceController;
@@ -29,6 +30,10 @@ Route::middleware('auth')->prefix('api')->group(function () {
 });
 
 Route::middleware(['auth', 'checkRole:sales'])->group(function () {
+    Route::post('/estimates', [EstimateController::class, 'store'])->name('estimates.store');
+    Route::get('/estimates/{estimate}', [EstimateController::class, 'show'])->name('estimates.show');
+    Route::post('/estimates/{estimate}/convert', [EstimateController::class, 'convert'])->name('estimates.convert');
+
     Route::get('/sales', [SalesController::class, 'create'])->name('sales.index');
     Route::post('/sales', [SalesController::class, 'store'])->name('sales.store');
 

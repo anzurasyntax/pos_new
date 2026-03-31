@@ -113,14 +113,6 @@ class SaleService
                     if (! $variant || (int) $variant->product_id !== $productId) {
                         throw ValidationException::withMessages(['stock' => ['Invalid variant selected for '.$product->name.'.']]);
                     }
-
-                    if ((int) $variant->stock_quantity < $qty) {
-                        throw ValidationException::withMessages(['stock' => ['Insufficient stock for '.$product->name.' ('.$variant->variant_name.').']]);
-                    }
-                } else {
-                    if ((int) $product->stock_quantity < $qty) {
-                        throw ValidationException::withMessages(['stock' => ['Insufficient stock for '.$product->name.'.']]);
-                    }
                 }
 
                 $lineTotal = $qty * $price;
@@ -132,6 +124,40 @@ class SaleService
                     'quantity' => $qty,
                     'price' => $price,
                 ];
+            }
+
+            $requiredByKey = [];
+            foreach ($normalizedItems as $row) {
+                $pk = $row['product_id'].'|'.($row['variant_id'] ?? '');
+                $requiredByKey[$pk] = ($requiredByKey[$pk] ?? 0) + $row['quantity'];
+            }
+
+            foreach ($requiredByKey as $pk => $needQty) {
+                [$pidStr, $vStr] = explode('|', $pk, 2);
+                $pid = (int) $pidStr;
+                $variantKey = $vStr === '' ? null : (int) $vStr;
+                $product = $products->get($pid);
+                $hasVariants = $variantsByProductId->has($pid) && $variantsByProductId->get($pid)->count() > 0;
+
+                if ($hasVariants) {
+                    $variant = $variants->get($variantKey);
+                    if (! $variant) {
+                        throw ValidationException::withMessages(['stock' => ['Invalid variant for stock check.']]);
+                    }
+                    $avail = (int) $variant->stock_quantity;
+                    if ($needQty > $avail) {
+                        throw ValidationException::withMessages([
+                            'stock' => ['Insufficient stock for '.$product->name.' ('.$variant->variant_name.'). Available '.$avail.', requested '.$needQty.'.'],
+                        ]);
+                    }
+                } else {
+                    $avail = (int) $product->stock_quantity;
+                    if ($needQty > $avail) {
+                        throw ValidationException::withMessages([
+                            'stock' => ['Insufficient stock for '.$product->name.'. Available '.$avail.', requested '.$needQty.'.'],
+                        ]);
+                    }
+                }
             }
 
             $sale = Sale::create([

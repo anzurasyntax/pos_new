@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\InventoryAdjustmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -157,7 +159,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, InventoryAdjustmentService $inventoryAdjustment): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -215,6 +217,24 @@ class ProductController extends Controller
             ProductVariant::insert($rows);
         }
 
+        if ($hasVariants) {
+            if ($sumVariantStock > 0) {
+                $inventoryAdjustment->recordProductLevelAdjustment(
+                    $product,
+                    $sumVariantStock,
+                    Auth::id(),
+                    'Opening stock (new product with variants)',
+                );
+            }
+        } elseif ($baseStock > 0) {
+            $inventoryAdjustment->recordProductLevelAdjustment(
+                $product,
+                $baseStock,
+                Auth::id(),
+                'Opening stock (new product)',
+            );
+        }
+
         return redirect()
             ->route('products.index')
             ->with('success', 'Product added successfully.');
@@ -228,8 +248,12 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(Request $request, Product $product, InventoryAdjustmentService $inventoryAdjustment): RedirectResponse
     {
+        $hadVariants = $product->variants()->exists();
+        $oldStockOnProductRow = (int) $product->stock_quantity;
+        $oldVariantTotal = $hadVariants ? (int) $product->variants()->sum('stock_quantity') : 0;
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'sku' => [
@@ -294,6 +318,18 @@ class ProductController extends Controller
             ProductVariant::insert($rows);
         } else {
             $product->variants()->delete();
+        }
+
+        $beforeQty = $hadVariants ? $oldVariantTotal : $oldStockOnProductRow;
+        $afterQty = $hasVariants ? $sumVariantStock : $baseStock;
+        $delta = $afterQty - $beforeQty;
+        if ($delta !== 0) {
+            $inventoryAdjustment->recordProductLevelAdjustment(
+                $product->fresh(),
+                $delta,
+                Auth::id(),
+                'Product form stock update',
+            );
         }
 
         return redirect()
